@@ -1,21 +1,22 @@
-import javax.activation.DataHandler;
 import java.net.*;
 import java.io.*;
+import java.util.*;
 
-public class TCPServerApp {
-    private String hostIp;
+
+public class TCPServerApp implements Runnable{
+    private String hostName;
     private int port;
     ServerSocket serverSocket;
     Socket newConnection;
 
-    public TCPServerApp(String ip, int port){
-        this.hostIp = ip;
+    public TCPServerApp(String name, int port){
+        this.hostName = name;
         this.port = port;
     }
 
     public void runServer(){
         try{
-            System.out.println("Server is running on port: "+this.port);
+            System.out.println(this.hostName +" is running on port: "+this.port);
             serverSocket = new ServerSocket(port);
             newConnection = serverSocket.accept();
             PrintWriter out = new PrintWriter(newConnection.getOutputStream(),true);
@@ -24,12 +25,9 @@ public class TCPServerApp {
 
             String inputLine, outputLine;
             System.out.println("Waiting  for messages");
+            System.out.println("New request!");
             while ((inputLine = in.readLine()) != null) {
-                System.out.println("recived: "+ inputLine);
-                outputLine = inputLine.toUpperCase();
-                System.out.println("converted: " + outputLine);
-                out.println(outputLine);
-
+                System.out.println(inputLine);
             }
             System.out.println("User requested to end the communication!");
             out.close();
@@ -40,5 +38,13 @@ public class TCPServerApp {
         catch (IOException e){
             System.err.println("Error! "+ e);
         }
+
+
     }
+
+    @Override
+    public void run(){
+
+    }
+
 }
