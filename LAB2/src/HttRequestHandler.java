@@ -1,11 +1,15 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.Date;
+import java.util.StringTokenizer;
 
 public class HttRequestHandler implements Runnable{
     private Socket theSocket;
+    private String name;
 
-    public HttRequestHandler(Socket socket){
+    public HttRequestHandler(Socket socket, String name){
         this.theSocket = socket;
+        this.name = name;
     }
 
     @Override
@@ -14,12 +18,13 @@ public class HttRequestHandler implements Runnable{
             PrintWriter out = new PrintWriter(this.theSocket.getOutputStream());
             BufferedReader in = new BufferedReader(new InputStreamReader(this.theSocket.getInputStream()));
             BufferedOutputStream dataOut = new BufferedOutputStream(this.theSocket.getOutputStream());
-            String inputLine, fileName;
+            String inputLine;
 
             System.out.println("New request!"+ this.theSocket.toString());
-            while ((inputLine = in.readLine()) != null) {
-                System.out.println(inputLine);
-            }
+            inputLine = in.readLine();
+            System.out.println(inputLine);
+            parse(inputLine, out, dataOut);
+
             System.out.println("User requested to end the communication!");
             out.close();
             in.close();
@@ -39,66 +44,79 @@ public class HttRequestHandler implements Runnable{
         }
     }
 
-    public void parse {
-        StringTokenizer parse = new StringTokenizer(input);
-        String method = parse.nextToken().toUpperCase(); // we get the HTTP method of the client
-        // we get file requested
-        fileRequested = parse.nextToken().toLowerCase();
+    public void parse (String line, PrintWriter out,BufferedOutputStream dataOut){
+        StringTokenizer parse = new StringTokenizer(line);
+        String method = parse.nextToken().toUpperCase();
+        String filename = parse.nextToken().toLowerCase();
+        try{
+            if (!method.equals("GET")  &&  !method.equals("HEAD")) {
+                File file = new File(new File("."), "nosupported.html");
+                int fileLength = (int) file.length();
+                String contentMimeType = "text/html";
+                byte[] fileData = readFile(file, fileLength);
 
-        // we support only GET and HEAD methods, we check
-        if (!method.equals("GET")  &&  !method.equals("HEAD")) {
-            if (verbose) {
-                System.out.println("501 Not Implemented : " + method + " method.");
-            }
-
-            // we return the not supported file to the client
-            File file = new File(WEB_ROOT, METHOD_NOT_SUPPORTED);
-            int fileLength = (int) file.length();
-            String contentMimeType = "text/html";
-            //read content to return to client
-            byte[] fileData = readFileData(file, fileLength);
-
-            // we send HTTP Headers with data to client
-            out.println("HTTP/1.1 501 Not Implemented");
-            out.println("Server: Java HTTP Server from SSaurel : 1.0");
-            out.println("Date: " + new Date());
-            out.println("Content-type: " + contentMimeType);
-            out.println("Content-length: " + fileLength);
-            out.println(); // blank line between headers and content, very important !
-            out.flush(); // flush character output stream buffer
-            // file
-            dataOut.write(fileData, 0, fileLength);
-            dataOut.flush();
-
-        } else {
-            // GET or HEAD method
-            if (fileRequested.endsWith("/")) {
-                fileRequested += DEFAULT_FILE;
-            }
-
-            File file = new File(WEB_ROOT, fileRequested);
-            int fileLength = (int) file.length();
-            String content = getContentType(fileRequested);
-
-            if (method.equals("GET")) { // GET method so we return content
-                byte[] fileData = readFileData(file, fileLength);
-
-                // send HTTP Headers
-                out.println("HTTP/1.1 200 OK");
-                out.println("Server: Java HTTP Server from SSaurel : 1.0");
+                // we send HTTP Headers with data to client
+                out.println("HTTP/1.1 501 Not Implemented");
+                out.println("Server: "+this.name);
                 out.println("Date: " + new Date());
-                out.println("Content-type: " + content);
+                out.println("Content-type: " + contentMimeType);
                 out.println("Content-length: " + fileLength);
                 out.println(); // blank line between headers and content, very important !
                 out.flush(); // flush character output stream buffer
-
+                // file
                 dataOut.write(fileData, 0, fileLength);
                 dataOut.flush();
-            }
 
-            if (verbose) {
-                System.out.println("File " + fileRequested + " of type " + content + " returned");
             }
+            else {
+                if (filename.endsWith("/")) {
+                    filename += "index.html";
+                }
+
+                File file = new File(new File("").getAbsolutePath(), filename);
+                int fileLength = (int) file.length();
+                String content = getContentType(filename);
+
+                if (method.equals("GET")) {
+                    byte[] fileData = readFile(file, fileLength);
+
+                    // send HTTP Headers
+                    out.println("HTTP/1.1 200 OK");
+                    out.println("Server: "+this.name);
+                    out.println("Date: " + new Date());
+                    out.println("Content-type: " + content);
+                    out.println("Content-length: " + fileLength);
+                    out.println();
+                    out.flush();
+                    dataOut.write(fileData, 0, fileLength);
+                    dataOut.flush();
+                }
+
+            }
+        }
+        catch (Exception e){
+            System.err.println(e);
+        }
+
+    }
+    private byte[] readFile(File file, int fileLength)  {
+        try{
+            FileInputStream fileIn = new FileInputStream(file);
+            byte[] fileData = new byte[fileLength];
+            fileIn.read(fileData);
+            return fileData;
+
+        }catch (Exception  e){
+            return null;
+        }
+    }
+
+    private String getContentType(String file) {
+        if (file.endsWith(".htm") || file.endsWith(".html")){
+            return "text/html";
+        }
+        else{
+            return "text/html";
 
         }
     }

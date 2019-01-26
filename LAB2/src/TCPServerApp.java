@@ -19,7 +19,7 @@ public class TCPServerApp{
             serverSocket = new ServerSocket(port);
             while(true){
                 newConnection = serverSocket.accept();
-                HttRequestHandler httRequestHandler = new HttRequestHandler(newConnection);
+                HttRequestHandler httRequestHandler = new HttRequestHandler(newConnection, this.hostName);
                 Thread thread = new Thread(httRequestHandler);
                 thread.start();
 
