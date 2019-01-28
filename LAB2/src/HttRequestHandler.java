@@ -50,7 +50,7 @@ public class HttRequestHandler implements Runnable{
         String filename = parse.nextToken().toLowerCase();
         try{
             if (!method.equals("GET")  &&  !method.equals("HEAD")) {
-                File file = new File(new File("."), "nosupported.html");
+                File file = new File(new File("").getAbsolutePath(), "nosupported.html");
                 int fileLength = (int) file.length();
                 String contentMimeType = "text/html";
                 byte[] fileData = readFile(file, fileLength);
@@ -61,20 +61,24 @@ public class HttRequestHandler implements Runnable{
                 out.println("Date: " + new Date());
                 out.println("Content-type: " + contentMimeType);
                 out.println("Content-length: " + fileLength);
-                out.println(); // blank line between headers and content, very important !
-                out.flush(); // flush character output stream buffer
+                out.println();
+                out.flush();
                 // file
                 dataOut.write(fileData, 0, fileLength);
                 dataOut.flush();
 
             }
             else {
-                if (filename.endsWith("/")) {
+                if (filename.equals("/")) {
                     filename += "index.html";
                 }
 
                 File file = new File(new File("").getAbsolutePath(), filename);
                 int fileLength = (int) file.length();
+                if (fileLength == 0){
+                    file = new File(new File("").getAbsolutePath(), "NotFound.html");
+                    fileLength = (int) file.length();
+                }
                 String content = getContentType(filename);
 
                 if (method.equals("GET")) {
